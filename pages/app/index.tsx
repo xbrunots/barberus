@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Link, Flex, Image, Button, Text, useToast, Spinner, List, ListItem, Avatar, AvatarBadge } from '@chakra-ui/core'
+import { Textarea, Select, Flex, Image, Button, Text, useToast, Spinner, List, ListItem, Avatar, AvatarBadge } from '@chakra-ui/core'
 import OverflowWrapper from 'react-overflow-wrapper';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -109,6 +109,108 @@ export default function Home({ _email, _session }) {
   function handleAddServiceInCart(context) {
 
   }
+  //agendamento_sidebar
+
+  function handleCloseAgendamento(d) {
+    $('.__shadow').fadeOut(500)
+    $('#agendamento_sidebar').animate({
+      top: '101%'
+    }, 200)
+    handlerClickMenuSidebarLeft('menu_inicio')
+  }
+
+  function handleOpenAgendamento() {
+    $('.__shadow').fadeIn(500)
+    $('#agendamento_sidebar').animate({
+      top: '3%'
+    }, 200)
+    handlerClickMenuSidebarLeft('menu_agendamento')
+  }
+
+
+  function handleCloseAddCliente(d) {
+    $('#clientes_sidebar_shadow').fadeOut(300)
+    $('.add_clientes_sidebar').animate({
+      right: '-41%'
+    }, 200)
+  }
+
+  function handleAddNewClient(context) {
+    $('#clientes_sidebar_shadow').fadeIn(200)
+    $('.add_clientes_sidebar').animate({
+      right: '0px'
+    }, 200)
+  }
+
+  function handleAgendamentoTagSelect(context) {
+    closeAgendamentoSidebarOptions()
+
+    $('button').removeClass('tag_selected')
+    $('.tag_' + context).addClass('tag_selected')
+
+    if (context == 'barbeiro') {
+      openAgendamentoSidebarOptions()
+      $('.agendamento_sidebar_options>img').animate({
+        left: '50px'
+      }, 200)
+    } else if (context == 'unidade') {
+      openAgendamentoSidebarOptions()
+      $('.agendamento_sidebar_options>img').animate({
+        left: '180px'
+      }, 200)
+
+    } else if (context == 'cliente') {
+      openAgendamentoSidebarOptions()
+      $('.agendamento_sidebar_options>img').animate({
+        left: '316px'
+      }, 200)
+
+    }
+  }
+
+  function openAgendamentoSidebarOptions() {
+    $('.agendamento_sidebar_options').animate({
+      opacity: 1,
+      top: '150px'
+    }, 200)
+  }
+
+
+  function closeAgendamentoSidebarOptions() {
+    $('.agendamento_sidebar_options').animate({
+      opacity: 0,
+      top: '101%'
+    }, 350)
+  }
+
+
+
+
+  function handleShowPushForm() {
+    $('.push_form').animate({
+      bottom: '0px'
+    }, 200)
+    $('.__shadow').fadeIn(500)
+  }
+
+  function handleClosePushForm() {
+    $('.__shadow').fadeOut(500)
+    $('.push_form').animate({
+      bottom: '-500px'
+    }, 200)
+    handlerClickMenuSidebarLeft('menu_inicio')
+  }
+
+  function sendPushMessageClick() {
+    handleClosePushForm()
+    toast({
+      title: "Mensagem enviada com sucesso!",
+      description: "Os pushs serão enviados gradativamente no decorrer do dia",
+      status: "success",
+      duration: 9000,
+      isClosable: true,
+    })
+  }
 
   function handleAddServiceInCartClickItem(item) {
     $('.cart_services_item').removeClass('cart_item_selected')
@@ -127,8 +229,7 @@ export default function Home({ _email, _session }) {
     //  }, 200)
     //$('.box_default_footer_top_title').html("<B>Comanda de</B> " + item.name)
 
-    $('.no_client_select_img').fadeOut(50)
-    $('.no_client_select').fadeOut(50)
+    $('.no_client_main').fadeOut(50)
     $('.clientes_detalhe_body').css('opacity', 1)
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').text(item.name)
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', item.whatsapp)
@@ -137,8 +238,7 @@ export default function Home({ _email, _session }) {
 
   function closeClistesUICLickItem() {
     $('.clientes_ul_item').removeClass('clientes_item_selected')
-    $('.no_client_select_img').fadeIn(50)
-    $('.no_client_select').fadeIn(50)
+    $('.no_client_main').fadeIn(50)
     $('.clientes_detalhe_body').css('opacity', 0)
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').text("clientes")
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', "")
@@ -248,6 +348,46 @@ export default function Home({ _email, _session }) {
       pathname: '/app/',
       hash: context.replace("menu_", "")
     })
+
+    if (context == "menu_push") {
+      handleShowPushForm()
+    }
+  }
+
+  var lastPhone = ""
+  function handleOnFocusInputContainer(id, type) {
+    $('p').removeClass('input_selected_color')
+    if ($("#" + id).val().trim().length > 0) {
+      $("#" + id).parent().find('p').addClass('input_selected')
+      $("#" + id).parent().find('p').addClass('input_selected_color')
+    } else {
+      $("#" + id).parent().find('p').removeClass('input_selected')
+      $("#" + id).parent().find('p').removeClass('input_selected_color')
+    }
+
+    if (type.toLowerCase() == "date") {
+      $("#" + id).val(date_formator($("#" + id).val()))
+    } else if (type.toLowerCase() == "phone") {
+      if ($("#" + id).val().length < 14) {
+        lastPhone = phone_formatador($("#" + id).val())
+        $("#" + id).val(lastPhone)
+      } else {
+        $("#" + id).val(lastPhone)
+      }
+    }
+  }
+
+  function phone_formatador(str) {
+    return str.replace(/^(\d{2})(\d{5})(\d{4})+$/, "($1)$2-$3");
+  }
+
+
+  function handleOnFocusOutInputContainer(id) {
+    if ($("#" + id).val() != undefined && $("#" + id).val().trim().length == 0) {
+      $("#" + id).parent().find('p').removeClass('input_selected')
+    } else {
+      $("#" + id).parent().find('p').removeClass('input_selected_color')
+    }
   }
 
   var productsMockItems = [
@@ -269,6 +409,25 @@ export default function Home({ _email, _session }) {
     { id: 6, name: 'Luis Inacio Lula da Silva', whatsapp: '15997572550', isBirthdate: false, photo: './images/default.png', comments: 'Cliente com debitos em aberto', time: '15:00', status: 'Finalizado' },
     { id: 7, name: 'Anacleto Paiva', whatsapp: '15997572550', isBirthdate: false, photo: './images/default.png', comments: 'Cliente com debitos em aberto', time: '16:00', status: 'Finalizado' },
     { id: 8, name: 'Zion Brito', whatsapp: '15997572550', isBirthdate: false, photo: './images/default.png', comments: 'Cliente com debitos em aberto', time: '17:00', status: 'Finalizado' },
+  ]
+
+  var agendamento_list = [
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201201, hour: 9.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 11.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 12.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 13.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 14.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 13.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 15.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 16.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 17.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 18.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 19.30, price: 25.90, status: 'Aberto', time: 30 },
   ]
 
   var clienteDetalhes = [
@@ -319,6 +478,59 @@ export default function Home({ _email, _session }) {
       ]
     },
   ]
+
+
+  var form_cadastro_client = [
+    { id: 1, className: 'name', placeholder: 'Nome', type: 'text' },
+    { id: 2, className: 'email', placeholder: 'E-mail', type: 'email' },
+    { id: 3, className: 'whatsApp', placeholder: 'WhatsApp', type: 'phone' },
+    { id: 4, className: 'nasc', placeholder: 'Data nascimento', type: 'date' },
+    { id: 5, className: 'comments', placeholder: 'Observações', type: 'text' }
+  ]
+
+  function date_formator(date) {
+
+    date = date.replace('//', '/');
+    var result = date.split("/");
+
+    var length = result.length;
+
+    // Append "/" after the last two charas, if more than 2 charas then remove it
+    if (length <= 2 && result[length - 1] != "") {
+      var last_two_digits = result[length - 1];
+      if (last_two_digits.length >= 2) {
+        date = date.slice(0, -last_two_digits.length);
+        date = date + last_two_digits.slice(0, 2) + "/";
+      }
+    }
+
+    if (typeof result[2] != "undefined") {
+      var year = result[2];
+      if (year.length > 4) {
+        date = date.slice(0, -year.length);
+        year = year.slice(0, 4);
+        date = date + year;
+      }
+    }
+    return date;
+  }
+
+  function isDate(value) {
+    var dateFormat;
+    if (toString.call(value) === '[object Date]') {
+      return true;
+    }
+    if (typeof value.replace === 'function') {
+      value.replace(/^\s+|\s+$/gm, '');
+    }
+    dateFormat = /(^\d{1,4}[\.|\\/|-]\d{1,2}[\.|\\/|-]\d{1,4})(\s*(?:0?[1-9]:[0-5]|1(?=[012])\d:[0-5])\d\s*[ap]m)?$/;
+    return dateFormat.test(value);
+  }
+
+  function isEmail(email) {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  }
 
   function price_to_number(v) {
     if (!v) { return 0; }
@@ -472,7 +684,7 @@ export default function Home({ _email, _session }) {
               alt="Início"
             /> <Text> Início</Text>
           </Button>
-          <Button id="menu_agendamento" onClick={(e) => handlerClickMenuSidebarLeft("menu_agendamento")} className="sidebar_left_menu_item" variant="solid">
+          <Button id="menu_agendamento" onClick={(e) => handleOpenAgendamento()} className="sidebar_left_menu_item" variant="solid">
             <Image className="pic"
               height="40px"
               src="./images/menu_agendamentos.webp"
@@ -491,7 +703,7 @@ export default function Home({ _email, _session }) {
               height="40px"
               src="./images/menu_push.webp"
               alt="Início"
-            /> <Text>Push</Text>
+            /> <Text>Push Center</Text>
           </Button>
           <Button id="menu_clientes" onClick={(e) => handleClientesOpen()} className="sidebar_left_menu_item" variant="solid">
             <Image className="pic"
@@ -644,12 +856,118 @@ export default function Home({ _email, _session }) {
         </Flex>
 
 
+        <Flex className="" id="agendamento_sidebar" width="100%">
+
+          <Flex className="box_default_top" width="100%">
+            <Image onClick={() => handleCloseAgendamento(this)} src="/images/close.webp" className="box_default_top_close" alt="Barberus" />
+            <Text className="box_default_top_title">
+              <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  Agendamento
+            </Text>
+            <Button onClick={() => handleAddNewClient(this)} className="agendamento_sidebar_buttonadd">
+              + novo
+            </Button>
+          </Flex>
+
+          <Flex className="agendamento_sidebar_options">
+            <Image src="/images/attow_top.webp" alt="Barberus" />
+          </Flex>
+
+          <Flex className="agendamento_sidebar_body">
+            <Flex className="agendamento_tags">
+              <Button onClick={() => handleAgendamentoTagSelect('barbeiro')} className="tag_barbeiro agendamento_sidebar_buttontag">
+                <Image src="/images/down.webp" alt="Barberus" />  Barbeiro
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('unidade')} className="tag_unidade agendamento_sidebar_buttontag">
+                <Image src="/images/down.webp" alt="Barberus" />  Unidade
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('cliente')} className="tag_cliente agendamento_sidebar_buttontag">
+                <Image src="/images/down.webp" alt="Barberus" />  Cliente
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('hoje')} className="tag_hoje agendamento_sidebar_buttontag">
+                Hoje
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('7_dias')} className="tag_7_dias agendamento_sidebar_buttontag">
+                7 dias
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('15_dias')} className="tag_15_dias agendamento_sidebar_buttontag">
+                15 dias
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('28_dias')} className="tag_28_dias agendamento_sidebar_buttontag">
+                28 dias
+            </Button>
+              <Button onClick={() => handleAgendamentoTagSelect('mes')} className="tag_mes agendamento_sidebar_buttontag">
+                Esse mês
+            </Button>
+            </Flex>
+            <List className="agendamento_ul" spacing={3}>
+              {
+                agendamento_list.map((e, i) =>
+                  <ListItem onClick={() => handleClientesUlClickItem(e)}
+                    className="agendamento_ul_item" id={"agendamento_item" + e.id} key={i}>
+
+                    {e.name}
+
+                    <Text>  {parsePhone(e.clientName)} </Text>
+
+                  </ListItem>)
+              }
+            </List>
+          </Flex>
+        </Flex>
+
         <Flex className="" id="clientes_sidebar" width="100%">
+
+          <Flex className="" id="clientes_sidebar_shadow" width="100%">
+            <Flex className="add_clientes_sidebar" width="100%">
+
+
+              <Flex className="box_default_top" width="100%">
+                <Image onClick={() => handleCloseAddCliente(this)} src="/images/close.webp" className="box_default_top_close" alt="Barberus" />
+                <Text className="box_default_top_title">
+                  <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  NOVO CLIENTE
+            </Text>
+              </Flex>
+
+              <Flex className="add_clientes_sidebar_list" width="100%">
+
+                {
+                  form_cadastro_client.map((e, i) =>
+                    <Flex className="input_container" width="100%">
+                      <Text>{e.placeholder}</Text>
+                      <Input
+                        onFocus={() => handleOnFocusInputContainer("form_cadastro_client_input" + e.id, e.type)}
+                        onBlur={() => handleOnFocusInputContainer("form_cadastro_client_input" + e.id, e.type)}
+                        onMouseLeave={() => handleOnFocusOutInputContainer("form_cadastro_client_input" + e.id)}
+                        onKeyDown={() => handleOnFocusInputContainer("form_cadastro_client_input" + e.id, e.type)}
+                        onKeyPress={() => handleOnFocusInputContainer("form_cadastro_client_input" + e.id, e.type)}
+                        onKeyUp={() => handleOnFocusInputContainer("form_cadastro_client_input" + e.id, e.type)}
+                        id={"form_cadastro_client_input" + e.id} className={e.className} placeholder={e.placeholder} />
+                    </Flex>
+                  )
+                }
+
+              </Flex>
+
+
+              <Flex className="footer">
+                <Button onClick={() => handleCloseAddCliente(this)} className="cancelar">
+                  cancelar
+            </Button>
+                <Button onClick={() => handleCloseAddCliente(this)} className="salvar">
+                  salvar
+            </Button>
+              </Flex>
+            </Flex>
+          </Flex>
+
           <Flex className="box_default_top" width="100%">
             <Image onClick={() => handleCloseClientesSidebar(this)} src="/images/close.webp" className="box_default_top_close" alt="Barberus" />
             <Text className="box_default_top_title">
-              <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  CLIENTES
+              <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  Clientes
             </Text>
+            <Button onClick={() => handleAddNewClient(this)} className="clientes_sidebar_buttonadd">
+              + novo
+            </Button>
           </Flex>
           <Flex className="box_default_body" width="100%">
             <Flex className="flex_clientes_filter">
@@ -673,10 +991,11 @@ export default function Home({ _email, _session }) {
               }
             </List>
             <Flex className="clientes_detalhes">
-              <Image className="no_client_select_img" src="/images/profile.png" alt="Barberus" />
-              <Text className="no_client_select">
-                Selecione um cliente ao lado
-              </Text>
+              <Flex className="no_client_main">
+                <Image className="no_client_select_img" src="/images/profile.png" alt="Barberus" />
+                <Text className="no_client_select">
+                  Selecione um cliente ao lado
+              </Text></Flex>
               <Flex className="clientes_detalhe_body">
 
                 <Flex className="instabarber">
@@ -686,7 +1005,7 @@ export default function Home({ _email, _session }) {
                       {
                         clienteDetalhes[0].instabarber.map((e, i) =>
                           <ListItem className="clientes_instabarber_li" id={"clientes_instabarber_item" + e.id} key={i}>
-                            <Avatar className="avatar_default gradient_instagram" src={e.photo} />
+                            <Avatar className="avatar_default " src={e.photo} />
                             <Flex className="social">
                               <Text className="item1 item">   <Image className="likes" src="/images/like.webp" alt="Barberus" /> {e.likes} </Text>
                               <Text className="item2 item">  <Image className="shares" src="/images/share.webp" alt="Barberus" />  {e.shares} </Text>
@@ -736,18 +1055,19 @@ export default function Home({ _email, _session }) {
                       )
                     }
                   </List>
-                </Flex>
-
-                <Flex className="agendamento_buttons_footer">
-                  <Button className="cliente_agendamento cliente_button">
-                    <Image src="./images/menu_agendamentos.webp" alt="Barberus" />
+                  <Flex className="agendamento_buttons_footer">
+                    <Button className="cliente_agendamento cliente_button">
+                      <Image src="./images/menu_agendamentos.webp" alt="Barberus" />
                 Agendar horário
               </Button>
-                  <Button onClick={(e) => handleSendWhatsAppMessage()} className="cliente_push cliente_button">
-                    <Image src="./images/whatsapp.webp" alt="Barberus" />
+                    <Button onClick={(e) => handleSendWhatsAppMessage()} className="cliente_push cliente_button">
+                      <Image src="./images/whatsapp.webp" alt="Barberus" />
                 Enviar mensagem
               </Button>
+                  </Flex>
                 </Flex>
+
+
               </Flex>
 
             </Flex>
@@ -761,11 +1081,12 @@ export default function Home({ _email, _session }) {
             <Text className="box_default_top_title">
               <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  COMANDAS
             </Text>
-          </Flex>
-          <Flex className="box_default_body" width="100%">
             <Button onClick={() => handleAddServiceInCart(this)} className="box_default_body_buttonadd">
               + nova
             </Button>
+          </Flex>
+          <Flex className="box_default_body" width="100%">
+
             {/* 
             <Image src="/images/search.webp" className=" cart_services_input_filter_icon" alt="Barberus" />*/}
 
@@ -793,6 +1114,31 @@ export default function Home({ _email, _session }) {
                 }
               </List>
             </Flex>
+
+
+            <Flex className="push_form">
+              <Flex className="push_header">
+                <Text className="push_form_title">
+                  <Image onClick={() => handleClosePushForm()} src="/images/close.webp" className="close_push_form" alt="Barberus" />
+                  <Text className="push_form_body_button_title">Push Center</Text>
+                </Text>
+              </Flex>
+              <Flex className="push_form_body">
+                <Select className="push_form_options" size="lg" >
+                  <option value="option1">Todos clientes</option>
+                  <option value="option2">Ex clientes</option>
+                  <option value="option3">Aniversariantes do mês</option>
+                </Select>
+
+                <Textarea placeholder="Escreva sua mensagem aqui..." />
+
+                <Button onClick={() => sendPushMessageClick()} className="push_form_body_button">
+                  <Image src="/images/send.webp" alt="Barberus" /> Enviar
+                </Button>
+              </Flex>
+
+            </Flex>
+
 
             <Flex className="box_default_footer" width="100%">
               <Flex className="box_default_footer_top" width="100%">
@@ -832,9 +1178,8 @@ export default function Home({ _email, _session }) {
 
           </Flex>
         </Flex>
-
-
       </Flex>
+
     </Flex >
 
   )
