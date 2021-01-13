@@ -174,15 +174,14 @@ input:focus {
   
   
   ::-webkit-scrollbar {
-  width: 5px;
-  height: 3px;
+  width: 8px;
   }
   
   ::-webkit-scrollbar-track {background: rgb(189 189 189 / 14%);}
   
-  ::-webkit-scrollbar-thumb {
-  -webkit-box-shadow: 0 0 10px white !important;
-  background: #d6d6d699;
+  ::-webkit-scrollbar-thumb { 
+  background: #00000099;
+  border-radius:20px
   }
   #homeHeaderImageLogo{
   float: right;
@@ -353,23 +352,25 @@ input:focus {
   
   .home_sidebar_left{
   
-  background: black;
+background: black;
   
-  /* left: -310px; */
+/* left: -310px; */
   
-  left: 0px;
+left: 0px;
   
-  position: fixed;
+position: fixed;
   
-  top: 0px;
+top: 0px;
   
-  padding-top: 70px;
+padding-top: 70px;
   
-  border-radius: 0 0 14px;
+border-radius: 0 0 14px;
   
-  display: block !important;
+display: block !important;
   
-  z-index: 77777;
+z-index: 77777;
+  
+overflow: auto;
   }
   
   .pictureOpenSidebarLeft{
@@ -575,63 +576,74 @@ input:focus {
   
   .inicio_head_box{
   
-  background: #eeeeee;
+background: #eeeeee;
   
-  height: 80%;
+height: 100%;
   
-  position: absolute;
+position: absolute;
   
-  top: 100px;
+margin-left: 300px;
   
-  margin-left: 300px;
+display: block !important;
   
-  display: block !important;
+overflow: auto;
   
-  padding-left: 70px;
+padding-bottom: 80px;
+  
+display: flex !important;           /* establish flex container */
+  
+flex-direction: column;  /* make main axis vertical */
+  
+justify-content: center; /* center items vertically, in this case */
+  
+align-items: center;
+  
+top: 0px;
   }
   
   
   .resumo_title {
   
-  /* position: absolute; */
+/* position: absolute; */
   
-  top: 6px;
+top: 6px;
   
-  font-weight: 700;
+font-weight: 700;
   
-  text-transform: uppercase;
+text-transform: uppercase;
   
-  font-size: 20px;
+font-size: 20px;
   
-  /* border-bottom: 2px solid #00000014; */
+/* border-bottom: 2px solid #00000014; */
   
-  margin-bottom: 30px;
+margin-bottom: 30px;
   
-  padding-left: 50px;
+padding-left: 50px;
   
-  color: #9e9e9e;
+color: #9e9e9e;
+  
+position: absolute;
   }
   
   
   .resumo_row{
   
-  height: 250px;
+height: 250px;
   
-  display: flex;
+display: flex;
   
-  justify-content: space-between !important;
+justify-content: space-between !important;
   
-  margin-left: auto;
+margin-left: auto;
   
-  text-align: left !important;
+text-align: left !important;
   
-  width: 1200px !important;
+width: 1200px !important;
   
-  float: left;
+float: left;
   }
   
   .resumo_row1{
-  
   }
   .resumo_row2{
   
@@ -1160,6 +1172,12 @@ border-radius: 20px 20px 0 0 !important;
   color: silver;
   }
   
+  .item[data-name="Aberto"],
+  .item[data-name="aberto"]{
+  
+  color: #4CAF50;
+  }
+  
   
   .cart_services_input_filter{
   
@@ -1206,9 +1224,7 @@ border-radius: 20px 20px 0 0 !important;
   
   .flex_cart_filter{position: absolute !important;top: 120px;left: 0px;width: 100% !important;height: auto !important;padding-right: 30px;padding-left: 30px;z-index: 8;}
   .flex_cart_filter>img{position: absolute;height: 24px;margin: 14px;z-index: 888888;-webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */filter: grayscale(100%);opacity: 0.3;}
-  
-  
-  
+   
   
   .clientes_input_filter:hover{
   
@@ -2104,7 +2120,7 @@ height: auto;
     position: fixed;
     /* height: 100px; */
     width: auto;
-    bottom: 41px;
+    bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2397,17 +2413,17 @@ border-radius: 20px !important;
   }
 
   #agendamento_sidebar{
-    width: 90%;
-    height: 94% !important;
-    display: block !important;
+    width: 98%;
+    height: 96%;
+    display: block;
     position: fixed;
-    right: 5%;
+    right: 1%;
     background: #E2E8F0;
-    top: 0px;
+    top: 101%;
     border-radius: 20px;
     box-shadow: 0 0 10px #00000066;
-    top: 100%;
     z-index: 9999999999999999999 !important;
+    display: none;
   }
  
 
@@ -2419,16 +2435,75 @@ background: white;
   }
   .agendamento_ul{
     
-padding: 20px;
+/* padding: 20px; */
+    
+position: relative;
+    
+padding-top: 40px;
+    
+overflow: scroll;
+    
+height: 100%;
+    
+border-radius: 20px;
+    
+padding-bottom: 200px;
   }
+
+  .agendamento_ul>.coluna.footer{
+  bottom: 0px;
+  /* width: 97%; */
+  background: #008eff;
+  border-radius: 0 0 10px 10px;
+  height: 50px;
+  }
+.agendamento_ul>.coluna{
+  
+/* padding: 10px; */
+  
+padding-right: 20PX;
+  
+PADDING-LEFT: 20px;
+  
+background: black;
+  
+color: white;
+  
+font-size: 11px;
+  
+box-shadow: 0px 5px 9px #00000073;
+  
+position: fixed;
+  
+width: 98%;
+  
+margin-top: -40px;
+}
+.agendamento_ul_item:hover{
+  
+background: #00000014;
+}
   .agendamento_ul_item{
     
+padding-right: 20PX;
+    
+PADDING-LEFT: 20px;
+    
+font-weight: 900;
+    
+margin: 0px !important;
+    
+/* padding: 10px; */
+    
+cursor: pointer;
   }
   .agendamento_sidebar_body {
     
 display: block !important;
     
-/* padding: 20px; */
+position: relative !important;
+    
+height: 100%;
   }
 
  .agendamento_sidebar_buttontag>img{
@@ -2441,28 +2516,36 @@ filter: brightness(100) !important;
   }
  
    .agendamento_sidebar_options {
-    width: 40% !important;
-    height: calc( 100% - 160px) !important;
+    width: 60% !important;
+    height: 50% !important;
     position: absolute;
     top: 101%;
-    left: 10px;
-    background: black;
+    left: 20%;
+    background: white;
     border-radius: 20px;
     z-index: 99999;
     display: block !important;
+    box-shadow: 0 0 10px silver;
     opacity: 0;
   }
 
   .agendamento_sidebar_options>img{
 
-position: absolute;
+/* position: absolute; */
 
-top: -16px;
+/* top: -16px; */
 
-height: 32px;
+height: 21px;
 
 left: 50px;
 
+margin: 20px;
+
+cursor: pointer;
+
+filter: grayscale(100);
+
+z-index: 999999999999999;
 }
 
 .tag_selected{
@@ -2479,3 +2562,300 @@ filter: brightness(100) !important;
 .tag_selected:hover{
    opacity:0.8;
 }
+
+.agendamento_combo_close{
+
+}
+
+.agendamento_combo_barbeiros>p{
+
+}
+
+.agendamento_combo_barbeiros{
+  
+height: calc(100% - 130px) !important;
+  
+padding: 30px;
+  
+overflow: overlay;
+  
+position: absolute;
+  
+top: 0px;
+  
+width: 100%;
+  
+margin-top: 130px;
+}
+.agendamento_combo_item{
+  padding: 2px;
+  border-radius: 40px;
+cursor: pointer;
+  
+DISPLAY: -webkit-box;
+} 
+.agendamento_combo_item>p{
+  
+cursor: pointer;
+  
+display: flex;
+  
+align-items: center;
+  
+justify-content: center;
+} 
+
+.agendamento_combo_item:hover{
+  background: #b1b1b124;
+  border-radius: 40px;
+  font-weight: 900;
+}
+
+.agendamento_combo_item>img{
+  
+} 
+
+ .gendamento_combo_barbeiros_input_filter{ 
+}
+
+.agendamento_combo_barbeiros_filter{
+  
+position: relative;
+  
+margin-top: -20px;
+  
+background: transparent;
+}
+.agendamento_combo_barbeiros_filter>img{
+  
+} 
+.agendamento_combo_barbeiros_input_filter,
+.agendamento_combo_barbeiros_input_filter_unidades,
+.agendamento_combo_barbeiros_input_filter_clientes{
+    background: white !important;
+    margin: 20px;
+    padding-left: 60px !important;
+}
+
+.agendamento_combo_barbeiros_input_filter_clear_icon{
+  /* position: absolute; */
+  height: 24px;
+  margin: 14px;
+  z-index: 999999999;
+  -webkit-filter: grayscale(100%);
+  filter: grayscale(100%);
+  opacity: 0.3;
+  right: 20px;
+  top: 19px;
+  position: absolute;
+  cursor: pointer;
+}
+
+
+.agendamento_combo_barbeiros_input_filter_icon{
+      background: white !important;
+      /* padding-left: 50px !important; */
+      /* padding-right: 50px !important; */
+      /* position: absolute; */
+      height: 24px;
+      margin: 14px;
+      z-index: 999999999;
+      -webkit-filter: grayscale(100%);
+      filter: grayscale(100%);
+      opacity: 0.3;
+      width: 32px;
+      height: 32px;
+      position: absolute;
+      left: 20px;
+      top: 16px;
+}
+
+.agendamento_sidebar_options_title{
+    position: absolute;
+    top: 18px;
+    margin-left: 60px;
+    font-weight: 700;
+}
+
+.agendamento_combo_barbeiros.barbeiros{
+  display: none;
+}
+.agendamento_combo_barbeiros.clientes{
+  display: none;
+}
+.agendamento_combo_barbeiros.unidades{
+  display: none;
+}
+
+.agendamento_row_collum{
+}
+.agendamento_ul>.coluna.footer>.agendamento_row_collum>p{
+  border: none !important;
+}
+.agendamento_ul>.coluna.footer>.agendamento_row_collum>p.desc{text-align: right;padding-top: 16px;}
+.agendamento_ul>.coluna.footer>.agendamento_row_collum>p.valor{
+ font-size: 20px;
+ text-align: left;
+ font-weight: 900;
+}
+.agendamento_row_collum>p.tempo{border-right: none !important}
+.agendamento_row_collum>p{
+  width: 10%;
+  font-size: 12px;
+  border-right: 1px solid #00000017;
+  border-bottom: 1px solid #00000017;
+  /* border-top: 1px solid #00000017; */
+  text-align: center;
+  padding: 10px;
+}
+.agendamento_row_collum>p.desc{
+  width: 20%;
+}
+.agendamento_row_collum>p.servico{
+  width: 20%;
+}
+
+.flex_agendamento_filter{
+  
+}
+.flex_agendamento_filter_main{
+  
+}
+.flex_agendamento_filter_icon{
+  
+}
+.flex_agendamento_filter_clear_icon{
+  
+}
+
+.pop_unidades{
+  
+background: #000000c4;
+  
+position: fixed;
+  
+top: 0px;
+  
+left: 0px;
+  
+z-index: 9999999999999999;
+  
+width: 100%;
+  
+height: 100%;
+  
+display: flex;           /* establish flex container */
+  
+flex-direction: column;  /* make main axis vertical */
+  
+justify-content: center; /* center items vertically, in this case */
+  
+align-items: center;
+}
+
+
+.list_header_title{
+  width: 100% !important;
+  display: flex;
+  border-bottom: 1px solid #c0c0c029;
+}
+
+.list_header_close{
+  filter: brightness(0);
+  height: 54px;
+  width: 54px;
+  padding: 16px;
+  margin: 4px;
+  cursor: pointer;
+}
+
+.list_header_title_text{
+
+  font-size: 20px;
+    
+  padding-top: 15px;
+    
+  font-weight: bold;
+}
+
+.list_filter_container{width: 100% !important;height: auto !important;padding-right: 30px;padding-left: 30px;margin-top: 30px;}
+.list_filter_container>img{position: absolute;height: 24px;margin: 14px;z-index: 999999999;-webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */filter: grayscale(100%);opacity: 0.3;}
+  
+.list_filter_container_input{
+  background: white !important;
+  padding-left: 50px !important;
+  padding-right: 50px !important;
+  }
+  
+  .list_filter_container_clear_icon{
+  
+    right: 30px;
+    
+    padding: 3px;
+    
+    cursor: pointer;
+    
+    opacity: 0.5 !important;
+    }
+    
+
+    .list_ul{
+  
+width: 100%;
+  
+padding: 20PX;
+  
+overflow: overlay;
+  
+height: 80%;
+}
+      
+      .list_ul_item:hover{
+      background: #ffffff69 !important;
+      }
+      
+      .list_ul_item  {display: flex;position: relative;font-weight: 700;margin-bottom: 20px !important;cursor: pointer;border-radius: 40px;padding: 3px;}
+      .list_ul_item >p{
+      
+      position: absolute;
+      
+      bottom: 0;
+      
+      padding-left: 57px;
+      
+      font-weight: 700;
+      
+      font-size: 12px;
+      
+      top: 26px;
+      }
+
+      .list_ul_item_selected:hover{
+        background: #000000bd !important;
+        }
+        
+        .list_ul_item_selected{
+        background: #000000 !important;
+        color: white !important;
+        }
+        .list_ul_item_selected>.avatar_default{
+        background: white !important;
+        color: black !important;
+        }
+
+        .list_main{
+    DISPLAY: BLOCK !IMPORTANT;
+    background: white;
+    border-radius: 20px;
+    width: 60%;
+    min-width: 400px;
+    height: 80%;
+}
+
+.item_hide{
+  display: none !important;
+  }
+
+  .list_ul_item:hover{
+    background: #00000011 !important;
+  }

@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Textarea, Select, Flex, Image, Button, Text, useToast, Spinner, List, ListItem, Avatar, AvatarBadge } from '@chakra-ui/core'
+import { Textarea, Select, Flex, Image, Button, Text, useToast, Spinner, List, ListItem, Avatar, AvatarBadge, Divider } from '@chakra-ui/core'
 import OverflowWrapper from 'react-overflow-wrapper';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -8,6 +8,7 @@ import { useRouter } from 'next/router'
 import $ from 'jquery';
 import jsCookie from 'js-cookie';
 import Input from '../../components/Input'
+import ListUnidades from '../../components/ListUnidades'
 import axios from 'axios';
 var LocalStore = require('localstorejs');
 import { useHistory } from "react-router-dom";
@@ -113,6 +114,7 @@ export default function Home({ _email, _session }) {
 
   function handleCloseAgendamento(d) {
     $('.__shadow').fadeOut(500)
+    $('#agendamento_sidebar').fadeOut(200)
     $('#agendamento_sidebar').animate({
       top: '101%'
     }, 200)
@@ -121,6 +123,7 @@ export default function Home({ _email, _session }) {
 
   function handleOpenAgendamento() {
     $('.__shadow').fadeIn(500)
+    $('#agendamento_sidebar').fadeIn(200)
     $('#agendamento_sidebar').animate({
       top: '3%'
     }, 200)
@@ -142,28 +145,33 @@ export default function Home({ _email, _session }) {
     }, 200)
   }
 
+
   function handleAgendamentoTagSelect(context) {
     closeAgendamentoSidebarOptions()
 
     $('button').removeClass('tag_selected')
     $('.tag_' + context).addClass('tag_selected')
+    $('.agendamento_combo_barbeiros').fadeOut(100)
+    $('.agendamento_combo_barbeiros_input_filter').fadeOut(50)
+    $('.agendamento_combo_barbeiros_input_filter_unidades').fadeOut(50)
+    $('.agendamento_combo_barbeiros_input_filter_clientes').fadeOut(50)
+    handleBarbeiroFilterClear()
 
     if (context == 'barbeiro') {
+      $('.agendamento_sidebar_options_title').html("Selecione um barbeiro para refinar a lista")
+      $('.agendamento_combo_barbeiros.barbeiros').fadeIn(200)
+      $('.agendamento_combo_barbeiros_input_filter').fadeIn(100)
       openAgendamentoSidebarOptions()
-      $('.agendamento_sidebar_options>img').animate({
-        left: '50px'
-      }, 200)
     } else if (context == 'unidade') {
+      $('.agendamento_sidebar_options_title').html("Selecione uma unidade para refinar a lista")
+      $('.agendamento_combo_barbeiros.unidades').fadeIn(200)
+      $('.agendamento_combo_barbeiros_input_filter_unidades').fadeIn(100)
       openAgendamentoSidebarOptions()
-      $('.agendamento_sidebar_options>img').animate({
-        left: '180px'
-      }, 200)
-
     } else if (context == 'cliente') {
+      $('.agendamento_sidebar_options_title').html("Selecione um cliente para refinar a lista")
+      $('.agendamento_combo_barbeiros.clientes').fadeIn(200)
+      $('.agendamento_combo_barbeiros_input_filter_clientes').fadeIn(100)
       openAgendamentoSidebarOptions()
-      $('.agendamento_sidebar_options>img').animate({
-        left: '316px'
-      }, 200)
 
     }
   }
@@ -171,8 +179,8 @@ export default function Home({ _email, _session }) {
   function openAgendamentoSidebarOptions() {
     $('.agendamento_sidebar_options').animate({
       opacity: 1,
-      top: '150px'
-    }, 200)
+      top: '25%'
+    }, 100)
   }
 
 
@@ -180,11 +188,8 @@ export default function Home({ _email, _session }) {
     $('.agendamento_sidebar_options').animate({
       opacity: 0,
       top: '101%'
-    }, 350)
+    }, 200)
   }
-
-
-
 
   function handleShowPushForm() {
     $('.push_form').animate({
@@ -235,6 +240,17 @@ export default function Home({ _email, _session }) {
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', item.whatsapp)
   }
 
+  function handleBarbeiroUlClickItem(item, type) {
+    $('.agendamento_combo_item').removeClass('clientes_item_selected')
+    $('#agendamento_combo_item' + item.id).addClass('clientes_item_selected')
+    // $('.box_default_footer').animate({
+    //    right: '0px'
+    //  }, 200)
+    //$('.box_default_footer_top_title').html("<B>Comanda de</B> " + item.name)
+    handleBarbeiroFilterClose()
+  }
+
+
 
   function closeClistesUICLickItem() {
     $('.clientes_ul_item').removeClass('clientes_item_selected')
@@ -282,6 +298,60 @@ export default function Home({ _email, _session }) {
     })
   }
 
+
+  function handlerFilterBarbeiros(text) {
+    var texto = ($('.agendamento_combo_barbeiros_input_filter').val()).toLowerCase()
+
+    $('.agendamento_combo_item').removeClass('cartItemFilterHide')
+
+    barbeirosArray.forEach(x => {
+      if (x.name.toLowerCase().includes(texto)) {
+
+      } else {
+        $('#agendamento_combo_item' + x.id).addClass('cartItemFilterHide')
+      }
+    })
+
+  }
+
+  function handlerFilterBarbeirosUnidades(text) {
+    var texto = ($('.agendamento_combo_barbeiros_input_filter_unidades').val()).toLowerCase()
+    $('.agendamento_combo_item').removeClass('cartItemFilterHide')
+
+    unidadesArray.forEach(x => {
+      if (x.name.toLowerCase().includes(texto)) {
+
+      } else {
+        $('#agendamento_combo_item_u' + x.id).addClass('cartItemFilterHide')
+      }
+    })
+  }
+
+  function handlerFilterBarbeirosClientes(text) {
+    var texto = ($('.agendamento_combo_barbeiros_input_filter_clientes').val()).toLowerCase()
+    $('.agendamento_combo_item').removeClass('cartItemFilterHide')
+
+    clientsMockServices.forEach(x => {
+      if (x.name.toLowerCase().includes(texto)) {
+
+      } else {
+        $('#agendamento_combo_item_c' + x.id).addClass('cartItemFilterHide')
+      }
+    })
+
+  }
+
+
+  function handleBarbeiroFilterClear() {
+    $('.agendamento_combo_barbeiros_input_filter').val("")
+    $('.agendamento_combo_barbeiros_input_filter_unidades').val("")
+    $('.agendamento_combo_barbeiros_input_filter_clientes').val("")
+    $('.agendamento_combo_item[data-name="row"]').removeClass('cartItemFilterHide')
+  }
+
+  function handleBarbeiroFilterClose() {
+    closeAgendamentoSidebarOptions()
+  }
 
   function handleClienteFilter(text) {
     var texto = ($('.clientes_input_filter').val()).toLowerCase()
@@ -412,22 +482,38 @@ export default function Home({ _email, _session }) {
   ]
 
   var agendamento_list = [
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201201, hour: 9.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 11.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 12.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 13.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 14.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 13.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 15.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 16.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 10.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 17.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 18.30, price: 25.90, status: 'Aberto', time: 30 },
-    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 19.30, price: 25.90, status: 'Aberto', time: 30 },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201201, hour: 9.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 2, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 3, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 11.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 4, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 12.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 5, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 13.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 6, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 7, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 8, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 14.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 9, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 13.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 10, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 11, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 15.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 12, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 16.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 13, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 14, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 17.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 15, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 18.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 16, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 19.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 1, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201201, hour: 9.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 2, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 3, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201202, hour: 11.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 4, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 12.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 5, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 13.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 6, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201204, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 7, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 8, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201206, hour: 14.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 9, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 13.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 10, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 11, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 15.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 12, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201207, hour: 16.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 13, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 10.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 14, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 17.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 15, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 18.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
+    { id: 16, clientName: 'Beto Paiva', name: 'Corte+Barba', date: 20201208, hour: 19.30, price: 25.90, status: 'Aberto', time: 30, barbeiro: "Beto P. G. I", unidade: "Centro" },
   ]
 
   var clienteDetalhes = [
@@ -479,6 +565,32 @@ export default function Home({ _email, _session }) {
     },
   ]
 
+  var barbeirosArray = [
+    { id: 1, name: 'Beto Paiva', photo: './images/default.png' },
+    { id: 2, name: 'Marcos Paiva', photo: './images/default.png' },
+    { id: 3, name: 'Beto Paiva', photo: './images/default.png' },
+    { id: 4, name: 'Flavio Silva', photo: './images/default.png' },
+    { id: 5, name: 'Erik Moura', photo: './images/default.png' },
+    { id: 6, name: 'Bruno Brito', photo: './images/default.png' },
+    { id: 7, name: 'Geto Paiva', photo: './images/default.png' },
+    { id: 8, name: 'Beto Gaiva', photo: './images/default.png' },
+    { id: 9, name: 'Beto Paiva', photo: './images/default.png' },
+    { id: 10, name: 'Marcos Paiva', photo: './images/default.png' },
+    { id: 13, name: 'Beto Paiva', photo: './images/default.png' },
+    { id: 14, name: 'Flavio Silva', photo: './images/default.png' },
+    { id: 15, name: 'Erik Moura', photo: './images/default.png' },
+    { id: 16, name: 'Bruno Brito', photo: './images/default.png' },
+    { id: 17, name: 'Geto Paiva', photo: './images/default.png' },
+    { id: 18, name: 'Beto Gaiva', photo: './images/default.png' },
+  ]
+
+  var unidadesArray = [
+    { id: 1, name: 'Centro Sorocaba', photo: './images/default.png' },
+    { id: 2, name: 'Franco da Rocha | RE Paiva', photo: './images/default.png' },
+    { id: 3, name: 'Paulista 1', photo: './images/default.png' },
+    { id: 4, name: 'Paulista 2', photo: './images/default.png' },
+    { id: 5, name: 'Iguatemi Alphaville', photo: './images/default.png' },
+  ]
 
   var form_cadastro_client = [
     { id: 1, className: 'name', placeholder: 'Nome', type: 'text' },
@@ -765,7 +877,7 @@ export default function Home({ _email, _session }) {
         </Flex>
 
         <Flex className="inicio_head_box">
-          <Text className="resumo_title">Resumo</Text>
+          {/* <Text className="resumo_title">Resumo</Text> */}
 
           <Flex className="resumo_row1 resumo_row"
             width="100%"
@@ -869,10 +981,71 @@ export default function Home({ _email, _session }) {
           </Flex>
 
           <Flex className="agendamento_sidebar_options">
-            <Image src="/images/attow_top.webp" alt="Barberus" />
+
+            <Image src="/images/minimize.webp" onClick={(e) => handleBarbeiroFilterClose()} className="agendamento_combo_close" alt="Barberus" />
+            <Text className="agendamento_sidebar_options_title">Selecione um barbeiro para refinar a lista</Text>
+            <Flex className="agendamento_combo_barbeiros_filter">
+              <Image src="/images/search.webp" className="agendamento_combo_barbeiros_input_filter_icon" alt="Barberus" />
+
+              <Input
+                placeholder="filtrar..."
+                onKeyDown={(e) => handlerFilterBarbeiros(e)}
+                onKeyPress={(e) => handlerFilterBarbeiros(e)}
+                onKeyUp={(e) => handlerFilterBarbeiros(e)}
+                className="agendamento_combo_barbeiros_input_filter" />
+              <Input
+                placeholder="filtrar..."
+                onKeyDown={(e) => handlerFilterBarbeirosClientes(e)}
+                onKeyPress={(e) => handlerFilterBarbeirosClientes(e)}
+                onKeyUp={(e) => handlerFilterBarbeirosClientes(e)}
+                className="agendamento_combo_barbeiros_input_filter_clientes" />
+              <Input
+                placeholder="filtrar..."
+                onKeyDown={(e) => handlerFilterBarbeirosUnidades(e)}
+                onKeyPress={(e) => handlerFilterBarbeirosUnidades(e)}
+                onKeyUp={(e) => handlerFilterBarbeirosUnidades(e)}
+                className="agendamento_combo_barbeiros_input_filter_unidades" />
+
+
+
+              <Image src="/images/close.webp" onClick={(e) => handleBarbeiroFilterClear()} className="agendamento_combo_barbeiros_input_filter_clear_icon" alt="Barberus" />
+            </Flex>
+
+            <List className="agendamento_combo_barbeiros barbeiros" spacing={3}>
+              {
+                barbeirosArray.map((e, i) =>
+                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'barbeiros')}
+                    className="agendamento_combo_item barbeiros" id={"agendamento_combo_item" + e.id} key={i}>
+                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
+                  </ListItem>)
+              }
+            </List>
+
+
+            <List className="agendamento_combo_barbeiros unidades" spacing={3}>
+              {
+                unidadesArray.map((e, i) =>
+                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'unidades')}
+                    className="agendamento_combo_item unidades" id={"agendamento_combo_item_u" + e.id} key={i}>
+                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
+                  </ListItem>)
+              }
+            </List>
+
+            <List className="agendamento_combo_barbeiros clientes" spacing={3}>
+              {
+                clientsMockServices.map((e, i) =>
+                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'clientes')}
+                    className="agendamento_combo_item clientes" id={"agendamento_combo_item_c" + e.id} key={i}>
+                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
+                  </ListItem>)
+              }
+            </List>
+
           </Flex>
 
           <Flex className="agendamento_sidebar_body">
+
             <Flex className="agendamento_tags">
               <Button onClick={() => handleAgendamentoTagSelect('barbeiro')} className="tag_barbeiro agendamento_sidebar_buttontag">
                 <Image src="/images/down.webp" alt="Barberus" />  Barbeiro
@@ -900,17 +1073,51 @@ export default function Home({ _email, _session }) {
             </Button>
             </Flex>
             <List className="agendamento_ul" spacing={3}>
+              <ListItem className="coluna">
+                <Flex className="agendamento_row_collum">
+                  <Text className="data">Data</Text>
+                  <Text className="hora">Hora</Text>
+                  <Text className="barbeiro">Barbeiro</Text>
+                  <Text className="barbearia">Unidade</Text>
+                  <Text className="cliente">Cliente</Text>
+                  <Text className="desc">Serviço</Text>
+                  <Text className="valor">Valor</Text>
+                  <Text className="status">Status</Text>
+                  <Text className="tempo">Tempo</Text>
+                </Flex>
+              </ListItem>
               {
                 agendamento_list.map((e, i) =>
                   <ListItem onClick={() => handleClientesUlClickItem(e)}
                     className="agendamento_ul_item" id={"agendamento_item" + e.id} key={i}>
 
-                    {e.name}
-
-                    <Text>  {parsePhone(e.clientName)} </Text>
+                    <Flex className="agendamento_row_collum">
+                      <Text className="item data">{parseDate(e.date)} </Text>
+                      <Text className="item hora">{parseHour(e.hour)} </Text>
+                      <Text className="item barbeiro">{e.barbeiro} </Text>
+                      <Text className="item barbearia">{e.unidade} </Text>
+                      <Text className="item cliente">{e.clientName} </Text>
+                      <Text className="item servico">{e.name} .</Text>
+                      <Text className="item valor">{parseMoney(e.price)}</Text>
+                      <Text data-name={e.status} className="item status">{e.status} </Text>
+                      <Text className="item tempo">{e.time} </Text>
+                    </Flex>
 
                   </ListItem>)
               }
+              <ListItem className="coluna footer">
+                <Flex className="agendamento_row_collum">
+                  <Text className="data"></Text>
+                  <Text className="hora"></Text>
+                  <Text className="barbeiro"></Text>
+                  <Text className="barbearia"></Text>
+                  <Text className="cliente"></Text>
+                  <Text className="desc">Total: </Text>
+                  <Text className="valor">R$ 3.452,90</Text>
+                  <Text className="status"></Text>
+                  <Text className="tempo"></Text>
+                </Flex>
+              </ListItem>
             </List>
           </Flex>
         </Flex>
@@ -1074,6 +1281,11 @@ export default function Home({ _email, _session }) {
           </Flex>
         </Flex>
 
+        <Flex className="pop_unidades">
+          <ListUnidades></ListUnidades>
+        </Flex>
+
+
 
         <Flex className="box_default" id="cart_sidebar" width="100%">
           <Flex className="box_default_top" width="100%">
@@ -1136,8 +1348,10 @@ export default function Home({ _email, _session }) {
                   <Image src="/images/send.webp" alt="Barberus" /> Enviar
                 </Button>
               </Flex>
-
             </Flex>
+
+
+
 
 
             <Flex className="box_default_footer" width="100%">
