@@ -1281,10 +1281,6 @@ export default function Home({ _email, _session }) {
           </Flex>
         </Flex>
 
-        <Flex className="pop_unidades">
-          <ListUnidades></ListUnidades>
-        </Flex>
-
 
 
         <Flex className="box_default" id="cart_sidebar" width="100%">
