@@ -7,22 +7,314 @@ import { faClock, faTimes, faColumns } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/router'
 import $ from 'jquery';
 import jsCookie from 'js-cookie';
+import { configs } from '../config.json';
 import Input from '../../components/Input'
 import ListUnidades from '../../components/ListUnidades'
+import ListBarbeiros from '../../components/BarbeirosComponent'
+import Financeiro from '../../components/FinanceiroComponent'
+import Estoques from '../../components/EstoqueComponent'
+import Agendamentos from '../../components/AgendamentoComponenet'
+import PopUpSQL from '../../components/PopupEditSQL'
 import axios from 'axios';
 var LocalStore = require('localstorejs');
 import { useHistory } from "react-router-dom";
 import Parser from 'html-react-parser';
+import { stat } from 'fs';
+var dayjs = require('dayjs')
 
 
-export default function Home({ _email, _session }) {
-
-  const [email, setEmail] = useState(_email);
+export default function Home({ _session }) {
   const [session, setSession] = useState(_session);
   const toast = useToast()
   const router = useRouter()
+  const API = configs.api
+  const AVATAR = configs.avatar
 
-  let history = useHistory();
+  function getUser() {
+    return JSON.parse(localStorage.getItem('userData'))
+  }
+
+  function getClients() {
+    return JSON.parse(localStorage.getItem('clientData'))
+  }
+
+  function getbarbeiros() {
+    return JSON.parse(localStorage.getItem('barberData'))
+  }
+
+  function getServices() {
+    return JSON.parse(localStorage.getItem('servicesData'))
+  }
+
+  function loadData() {
+    var config = {
+      headers: { 'Content-Type': 'application/json', 'token': localStorage.getItem('token') }
+    };
+
+    $('.footer>.value').html("")
+
+    axios.get(API + '/profile', config)
+      .then(function (response) {
+        console.log(response)
+        var quem = response.data.profile[0].name
+        if (quem == undefined) [
+          quem = response.data.profile[0].email
+        ]
+
+
+        localStorage.setItem('userData', JSON.stringify(response.data.profile[0]))
+        localStorage.setItem('clientData', JSON.stringify(response.data.clients))
+        localStorage.setItem('barberData', JSON.stringify(response.data.barbers))
+        localStorage.setItem('servicesData', JSON.stringify(response.data.services))
+
+        rendererHome()
+      })
+      .catch(function (error) {
+        console.log(error)
+        toast({
+          title: "Oops!",
+          description: "Token Inválido, refaça o login!",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        })
+
+        router.push('/login')
+      });
+  }
+
+  function api_changeAvatar(newPhoto, callback) {
+    var config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'token': localStorage.getItem('token')
+      }
+    };
+    var bodyJson = {
+      set: { photo: "" },
+      where: {
+        id: getUser().id
+      }
+    }
+    bodyJson.set.photo = newPhoto
+
+    axios.post(API + '/update/users', bodyJson, config)
+      .then(function (response) {
+        callback(true)
+      })
+      .catch(function (error) {
+        console.log(error)
+        toast({
+          title: "Oops!",
+          description: "Falha ao tentar trocar avatar!",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        })
+        callback(false)
+      });
+  }
+
+
+  function rendererHome() {
+    var user = getUser()
+
+    $("#homeImageLogo").attr('src', "./images/avatar/" + user.photo)
+    $("#homeHeaderImageLogo").attr('src', "./images/avatar/" + user.photo)
+
+    var name = user.email
+    if (user.name != undefined && user.name != null) {
+      name = user.name
+    }
+    $('.homeSidebarRightHeaderTextName').html(name)
+    //0=barber, 1=owner; 2=gerente de barbearia
+    var type = "OWNER"
+    if (parseInt(user.type) == 0) {
+      type = "BARBER"
+    } else if (parseInt(user.type) == 1) {
+      type = "OWNER"
+    } else if (parseInt(user.type) == 2) {
+      type = "MANAGER"
+    } else {
+      type = "BARBER"
+    }
+
+    $('.clientes_ul').html("")
+    getClients().map((e, i) => {
+      var row = `
+    <li class="clientes_ul_item"  id="clientes_item` + e.id + `">
+    <div class="avatar_default">
+    <div class="color_random" style="background: `+ getRandomColor() + `5e; color: white;" aria-label=" ` + e.name + `"> ` + initials(e.name) + `</div>
+    </div> `+ e.name + `
+    <p>  `+ parsePhone(e.whatsapp) + ` </p>
+    </li>
+    `
+      $(document).on("click", '#clientes_item' + e.id, function () {
+        handleClientesUlClickItem(e)
+      })
+
+      $('.clientes_ul').append(row)
+    })
+
+
+    $('.homeSidebarRightHeaderTextTypeName').html(type)
+    $('.homeSidebarRightHeaderTextEmail').html(user.email)
+    $('.__initial_loading').fadeOut()
+    $('.form_edit_barber').css('opacity', 1)
+  }
+
+  function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  function initials(name) {
+    let rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu');
+
+    let initials = [...name.matchAll(rgx)] || [];
+
+    initials = (
+      (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
+    ).toUpperCase();
+
+    return initials
+  }
+
+  function handlerClickMenuSidebarLeft(context) {
+    $('.sidebar_left_menu_item').removeClass('sidebar_left_menu_item_selected')
+    $("#" + context).addClass('sidebar_left_menu_item_selected')
+    router.push({
+      pathname: '/app/',
+      hash: context.replace("menu_", "")
+    })
+    $('.shadow_components').fadeOut()
+    $('.filters_containers>.item').removeClass('selected')
+    if (context == "menu_push") {
+      handleShowPushForm()
+    } else if (context == "menu_unidades") {
+      $('.pop_unidades').css('display', 'flex')
+      $('.pop_unidades').fadeIn(200)
+    } else if (context == "menu_barbeiros") {
+      inflateBarbeirosArray(function (success) {
+        if (success) {
+          $('.pop_barbeiros').css('display', 'flex')
+          $('.pop_barbeiros').fadeIn()
+        }
+      })
+    } else if (context == "menu_financeiro") {
+      $('.pop_financeiro').css('display', 'flex')
+      $('.pop_financeiro').fadeIn()
+    } else if (context == "menu_estoques") {
+      $('.pop_estoques').css('display', 'flex')
+      $('.pop_estoques').fadeIn()
+    } else if (context == "menu_agendamentos") {
+      $('.pop_agendamentos').css('display', 'flex')
+      $('.pop_agendamentos').fadeIn()
+    }
+  }
+
+  function inflateBarbeirosArray(callback) {
+    $('ul[property="prefix_barbeiros"].list_ul').html("")
+
+    getbarbeiros().map((e, i) => {
+      var row = `
+    <li property="prefix_barbeiros" class="list_ul_item"  id="list_unidades_item` + e.id + `">
+    <div class="avatar_default"> 
+    <img property="prefix_barbeiros" class="profile_photo" src="./images/avatar/`+ e.photo + `" />
+    </div> `+ e.name + `
+    <p>  `+ parsePhone(e.whatsapp) + ` </p>
+    </li>
+    `
+      $(document).on("click", '[property="prefix_barbeiros"]>#list_unidades_item' + e.id, function () {
+        handleBarbeirosListItemClick(e)
+      })
+
+      $('ul[property="prefix_barbeiros"].list_ul').append(row)
+    })
+
+    callback(true)
+  }
+
+  function validateNullBarbeirosFields(index, value) {
+    var str = value
+    if (str == null || str == "null" || str == undefined) {
+      str = ''
+      $('#prefix_barbeiros_form_input' + index).val('')
+      $('#prefix_barbeiros_form_input' + index).parent().find("p").removeClass("input_selected")
+    }
+    if (index == 4 && value.toString().length < 3) {
+      $('#prefix_barbeiros_form_input' + index).val('')
+    }
+    if (index == 13) {
+      //0=validar por email, 1=ativo, 2-inativo
+      if (parseInt(value) == 0) {
+        str = "VALIDAR EMAIL"
+      } if (parseInt(value) == 1) {
+        str = "ATIVO"
+      } if (parseInt(value) == 2) {
+        str = "INATIVO"
+      }
+    }
+
+    if (index == 13) {
+      //0=validar por email, 1=ativo, 2-inativo
+      if (parseInt(value) == 0) {
+        str = "VALIDAR EMAIL"
+      } if (parseInt(value) == 1) {
+        str = "ATIVO"
+      } if (parseInt(value) == 2) {
+        str = "INATIVO"
+      }
+    }
+
+    if (str.toString().length > 0) {
+      $('#prefix_barbeiros_form_input' + index).parent().find("p").addClass("input_selected")
+    }
+
+    return str
+  }
+
+  function handleBarbeirosListItemClick(item) {
+
+
+    $('#prefix_barbeiros_form_input0').val(validateNullBarbeirosFields(0, item.id))
+    $('#prefix_barbeiros_form_input1').val(validateNullBarbeirosFields(1, item.name))
+    $('#prefix_barbeiros_form_input2').val(validateNullBarbeirosFields(2, item.email))
+    $('#prefix_barbeiros_form_input3').val(validateNullBarbeirosFields(3, parsePhone(item.whatsapp)))
+    $('#prefix_barbeiros_form_input4').val(validateNullBarbeirosFields(4, parseDate(item.nasc)))
+    $('#prefix_barbeiros_form_input5').val(validateNullBarbeirosFields(5, item.photo))
+    $('#prefix_barbeiros_form_input6').val(validateNullBarbeirosFields(6, item.percent))
+    $('#prefix_barbeiros_form_input7').val(validateNullBarbeirosFields(7, item.cpf))
+    $('#prefix_barbeiros_form_input8').val(validateNullBarbeirosFields(8, item.rg))
+    $('#prefix_barbeiros_form_input9').val(validateNullBarbeirosFields(9, item.postal_code))
+    $('#prefix_barbeiros_form_input10').val(validateNullBarbeirosFields(10, item.city))
+    $('#prefix_barbeiros_form_input11').val(validateNullBarbeirosFields(11, item.state))
+    $('#prefix_barbeiros_form_input12').val(validateNullBarbeirosFields(12, item.address))
+    $('#prefix_barbeiros_form_input13').val(validateNullBarbeirosFields(13, item.status))
+    $('#prefix_barbeiros_form_input14').val(validateNullBarbeirosFields(14, item.comments))
+
+    $('.barber_whatsbutton').attr('data-phone', item.whatsapp)
+    $('[property="prefix_barbeiros"].list_main>.sidebar>.header>.sideabar_name').html(item.name)
+
+    if (item.photo != null) {
+      $('[property="prefix_barbeiros"].list_main>.sidebar>.header>.sideabar_photo').attr('src', './images/avatar/' + item.photo)
+    }
+
+    $('[property="prefix_barbeiros"].list_ul_item').removeClass('list_ul_item_selected')
+    $('[property="prefix_barbeiros"]#list_unidades_item' + item.id).addClass('list_ul_item_selected')
+    _openMenuBarbeiros()
+    $('.no_barbeiros_main').fadeOut()
+  }
+
+  function _openMenuBarbeiros() {
+    $('[property="prefix_barbeiros"].sidebar').animate({ width: '65%' }, 400)
+    $('[property="prefix_barbeiros"].list_filter_container').animate({ width: '35%' }, 400)
+    $('[property="prefix_barbeiros"].list_ul').animate({ width: '35%' }, 400)
+  }
 
   function handlerSubmitCreate(event: FormEvent) {
     event.preventDefault();
@@ -74,19 +366,32 @@ export default function Home({ _email, _session }) {
     var win = window.open(url, '_blank');
   }
 
+
   function handleOpenSidebarLeft(context) {
-    return;
 
     if ($('.pictureOpenSidebarLeft').hasClass('pictureOpenSidebarLeft_active')) {
       $('.pictureOpenSidebarLeft').removeClass('pictureOpenSidebarLeft_active')
-      $('.home_sidebar_left').animate({
-        left: '-310px'
-      }, 200)
+      $('.sidebar_left_menu_item>p').fadeOut(150, function () {
+        $('.home_sidebar_left').animate({
+          width: '120px'
+        }, 300)
+      })
+
+      $('.inicio_head_box').animate({
+        'margin-left': '100px'
+      }, 300)
+
     } else {
-      $('.pictureOpenSidebarLeft').addClass('pictureOpenSidebarLeft_active')
       $('.home_sidebar_left').animate({
-        left: '0px'
-      }, 200)
+        width: '300px'
+      }, 200, function () {
+        $('.sidebar_left_menu_item>p').fadeIn()
+      })
+
+      $('.inicio_head_box').animate({
+        'margin-left': '300px'
+      }, 300)
+      $('.pictureOpenSidebarLeft').addClass('pictureOpenSidebarLeft_active')
     }
   }
 
@@ -121,15 +426,134 @@ export default function Home({ _email, _session }) {
     handlerClickMenuSidebarLeft('menu_inicio')
   }
 
-  function handleOpenAgendamento() {
-    $('.__shadow').fadeIn(500)
-    $('#agendamento_sidebar').fadeIn(200)
-    $('#agendamento_sidebar').animate({
-      top: '3%'
-    }, 200)
-    handlerClickMenuSidebarLeft('menu_agendamento')
+  function validateEmail(email) {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
   }
 
+  function validateTelefone(t) {
+    //    var t = "+99 (99) 99999-9999";
+
+    var RegExp = /\+\d{2}\s\(\d{2}\)\s\d{4,5}-?\d{4}/g;
+    return RegExp.test("+55 " + t); //true
+  }
+
+  function handleSaveAddCliente() {
+
+    var config = {
+      headers: { 'Content-Type': 'application/json', 'token': localStorage.getItem('token') },
+      validateStatus: function (status) {
+        return true;
+      }
+    };
+
+    var nome = $('#form_cadastro_client_input1').val()
+    var email = $('#form_cadastro_client_input2').val()
+    var whats = $('#form_cadastro_client_input3').val().replace(" ", "").replace("(", "").replace(")", "").replace("+", "").replace("-", "").trim()
+    var niver = $('#form_cadastro_client_input4').val()
+    var obs = $('#form_cadastro_client_input5').val()
+
+    if (!validateEmail(email)) {
+      toast({
+        title: "Oops!",
+        description: "E-mail inválido!",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      })
+      return
+    }
+
+
+    if (whats == undefined || whats == null || whats.length < 11) {
+      toast({
+        title: "Oops!",
+        description: "WhatsApp inválido!",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (niver == undefined || niver == null || niver.split("/").length < 2) {
+      toast({
+        title: "Oops!",
+        description: "Data de nascimento inválida!",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      })
+      return
+    }
+
+
+    if (nome == undefined || nome == null) {
+      toast({
+        title: "Oops!",
+        description: "Nome inválido!",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      })
+      return
+    }
+
+    var aniversario = niver.split("/")[2] + niver.split("/")[1] + niver.split("/")[0]
+
+    var jsonData = {
+      name: nome,
+      email: email,
+      whatsapp: whats,
+      birth_date: aniversario,
+      comments: obs
+    }
+
+    axios.post(API + '/clients', jsonData, config)
+      .then(function (response) {
+        console.log(response)
+        if (response.data.error != undefined) {
+          toast({
+            title: "Oops!",
+            description: response.data.error,
+            status: "error",
+            duration: 4000,
+            isClosable: true,
+          })
+          return
+        }
+        if (response.data.insertId != undefined) {
+          handleCloseAddCliente(1)
+          toast({
+            title: "Uhul!",
+            description: nome + " cadastrado com sucesso!",
+            status: "success",
+            duration: 4000,
+            isClosable: true,
+          })
+          loadData()
+        } else {
+          toast({
+            title: "Oops!",
+            description: "Dados incorretos, verifique o formulário e tente novamente!",
+            status: "error",
+            duration: 4000,
+            isClosable: true,
+          })
+        }
+      })
+      .catch(function (error) {
+        console.log(JSON.stringify(error))
+        toast({
+          title: "Oops!",
+          description: "Dados incorretos, verifique o formulário e tente novamente!",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        })
+      });
+
+  }
 
   function handleCloseAddCliente(d) {
     $('#clientes_sidebar_shadow').fadeOut(300)
@@ -166,6 +590,7 @@ export default function Home({ _email, _session }) {
       $('.agendamento_sidebar_options_title').html("Selecione uma unidade para refinar a lista")
       $('.agendamento_combo_barbeiros.unidades').fadeIn(200)
       $('.agendamento_combo_barbeiros_input_filter_unidades').fadeIn(100)
+
       openAgendamentoSidebarOptions()
     } else if (context == 'cliente') {
       $('.agendamento_sidebar_options_title').html("Selecione um cliente para refinar a lista")
@@ -227,18 +652,96 @@ export default function Home({ _email, _session }) {
   }
 
   function handleClientesUlClickItem(item) {
-    $('.clientes_ul_item').removeClass('clientes_item_selected')
-    $('#clientes_item' + item.id).addClass('clientes_item_selected')
-    // $('.box_default_footer').animate({
-    //    right: '0px'
-    //  }, 200)
-    //$('.box_default_footer_top_title').html("<B>Comanda de</B> " + item.name)
+    openClient(item, function (success, response) {
+      if (success && response.data.calendar.data.length > 0) {
+        $('.clientes_ul_item').removeClass('clientes_item_selected')
+        $('#clientes_item' + item.id).addClass('clientes_item_selected')
+        $('.no_client_main').fadeOut(50)
+        $('.clientes_detalhe_body').css('opacity', 1)
+        $('#clientes_sidebar>.box_default_top>.box_default_top_title').text(item.name)
+        $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', item.whatsapp)
 
-    $('.no_client_main').fadeOut(50)
-    $('.clientes_detalhe_body').css('opacity', 1)
-    $('#clientes_sidebar>.box_default_top>.box_default_top_title').text(item.name)
-    $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', item.whatsapp)
+        var calendar = response.data.calendar.data
+        var photos = response.data.instabarber.data
+        $('.clientes_instabarber_ul').html("")
+
+        photos.forEach(element => {
+          var row = `
+          <li class="clientes_instabarber_li " 
+          id="clientes_instabarber_item`+ element.id + `"><div class="avatar_default">
+          <img src="`+ element.photo + `" "></div>
+          <div class="social "><p class="item1 item ">   
+          <img alt="Barberus" class="likes" src="/images/like.webp"> `+ element.likes + ` </p>  
+           </div>
+           </li>`
+          $('.clientes_instabarber_ul').append(row)
+        });
+        $('.clientes_agendamento_ul').html("")
+
+        var head = '<li class="clientes_agendamento_li clientes_agendamento_head css-992tcj"><div class="row css-k008qs"><p class="item1 item head css-1gxwm28">     Data </p><p class="item2 item head css-1gxwm28">   Descrição </p><p class="item3 item head css-1gxwm28">    Valor </p><p class="item4 item head css-1gxwm28">    Status </p><p class="item5 item head css-1gxwm28">     Tempo </p></div></li>'
+        $('.clientes_agendamento_ul').append(head)
+        calendar.forEach(element => {
+          var row = `
+          <li class="clientes_agendamento_li" data-status="`+ parseStatus(element.status).toLowerCase() + `" data-name="row" id="clientes_agendamento_item` + element.id + `">
+          <div class="row">
+          <p class="item1 item">   `+ parseDate(element.date) + ` ` + parseHour(element.hour) + `  </p>
+          <p class="item2 item">    `+ element.name + ` </p>
+          <p class="item3 item">    `+ parseMoney(element.price) + ` </p>
+          <p class="item4 item" data-name=" `+ parseStatus(element.status) + `">      ` + parseStatus(element.status) + ` </p>
+          <p class="item5 item">      `+ element.time + ` min </p></div></li>
+          `
+          $('.clientes_agendamento_ul ').append(row)
+        });
+      } else {
+        toast({
+          title: "OOps!",
+          description: "Não existem agendamentos para mostrar :(",
+          status: "info",
+          duration: 9000,
+          isClosable: true,
+        })
+      }
+    })
   }
+
+  function parseStatus(str) {
+    var status = "Agendado"
+    if (str == 1) {
+      status = "Agendado"
+    }
+
+    if (str == 0) {
+      status = "Cancelado"
+    }
+
+    if (str == 2) {
+      status = "Concluído"
+    }
+    return status
+  }
+
+  function openClient(item, callback) {
+    var config = {
+      headers: { 'Content-Type': 'application/json', 'token': localStorage.getItem('token') }
+    };
+
+    axios.get(API + '/clients/' + item.id, config)
+      .then(function (response) {
+        callback(true, response)
+      })
+      .catch(function (error) {
+        callback(false, null)
+        console.log(error)
+        toast({
+          title: "Oops!",
+          description: "Falha na requisição, tente novamente!",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        })
+      });
+  }
+
 
   function handleBarbeiroUlClickItem(item, type) {
     $('.agendamento_combo_item').removeClass('clientes_item_selected')
@@ -255,9 +758,9 @@ export default function Home({ _email, _session }) {
   function closeClistesUICLickItem() {
     $('.clientes_ul_item').removeClass('clientes_item_selected')
     $('.no_client_main').fadeIn(50)
-    $('.clientes_detalhe_body').css('opacity', 0)
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').text("clientes")
     $('#clientes_sidebar>.box_default_top>.box_default_top_title').attr('whatsapp', "")
+    $('#clientes_sidebar').fadeOut(200)
   }
 
   function handleAddServiceInCartCancelCLickItem() {
@@ -396,6 +899,7 @@ export default function Home({ _email, _session }) {
 
   function handleCloseClientesSidebar(d) {
     $('.__shadow').fadeOut(500)
+    $('#clientes_sidebar').fadeOut(200)
     $('#clientes_sidebar').animate({
       top: '120%'
     }, 200)
@@ -405,24 +909,15 @@ export default function Home({ _email, _session }) {
 
   function handleClientesOpen() {
     $('.__shadow').fadeIn(500)
+    $('#clientes_sidebar').fadeIn(200)
     $('#clientes_sidebar').animate({
       top: '3%'
     }, 200)
     handlerClickMenuSidebarLeft("menu_clientes")
   }
 
-  function handlerClickMenuSidebarLeft(context) {
-    $('.sidebar_left_menu_item').removeClass('sidebar_left_menu_item_selected')
-    $("#" + context).addClass('sidebar_left_menu_item_selected')
-    router.push({
-      pathname: '/app/',
-      hash: context.replace("menu_", "")
-    })
 
-    if (context == "menu_push") {
-      handleShowPushForm()
-    }
-  }
+  //
 
   var lastPhone = ""
   function handleOnFocusInputContainer(id, type) {
@@ -459,6 +954,9 @@ export default function Home({ _email, _session }) {
       $("#" + id).parent().find('p').removeClass('input_selected_color')
     }
   }
+
+
+  var avatar = AVATAR
 
   var productsMockItems = [
     { id: 1, name: 'Corte Simples', description: 'Corte com Tesoura e Maquina', price: 'R$ 30,00', time: 30, barberShop: 'Campolim Matriz', type: 'S', photo: './images/corte_sample.jpg' },
@@ -600,6 +1098,19 @@ export default function Home({ _email, _session }) {
     { id: 5, className: 'comments', placeholder: 'Observações', type: 'text' }
   ]
 
+  function handleChangeIcon(icon) {
+    $('.select_icon_for_user').fadeOut(200)
+    api_changeAvatar(icon, function (success) {
+      $("#homeImageLogo").attr('src', "./images/avatar/" + icon)
+      $("#homeHeaderImageLogo").attr('src', "./images/avatar/" + icon)
+    })
+  }
+
+  function handleOpenChangePhoto() {
+    $('.select_icon_for_user').fadeIn(200)
+  }
+
+
   function date_formator(date) {
 
     date = date.replace('//', '/');
@@ -678,6 +1189,8 @@ export default function Home({ _email, _session }) {
     return hour.toString().replace(".", ":")
   }
 
+
+
   function parsePhone(phone) {
     return mphone(phone)
   }
@@ -686,19 +1199,19 @@ export default function Home({ _email, _session }) {
     r = r.replace(/^0/, "");
     if (r.length > 10) {
       // 11+ digits. Format as 5+4.
-      r = r.replace(/^(\d\d)(\d{5})(\d{4}).*/, "(0$1) $2-$3");
+      r = r.replace(/^(\d\d)(\d{5})(\d{4}).*/, "($1) $2-$3");
     }
     else if (r.length > 5) {
       // 6..10 digits. Format as 4+4
-      r = r.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, "(0$1) $2-$3");
+      r = r.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, "($1) $2-$3");
     }
     else if (r.length > 2) {
       // 3..5 digits. Add (0XX..)
-      r = r.replace(/^(\d\d)(\d{0,5})/, "(0$1) $2");
+      r = r.replace(/^(\d\d)(\d{0,5})/, "($1) $2");
     }
     else {
       // 0..2 digits. Just add (0XX
-      r = r.replace(/^(\d*)/, "(0$1");
+      r = r.replace(/^(\d*)/, "($1");
     }
     return r;
   }
@@ -710,11 +1223,15 @@ export default function Home({ _email, _session }) {
       justifyContent="center"
       alignItems="center"
     >
+      <Flex className="__initial_loading">
+        <Spinner size="xl" />
+        <Text>Abrindo barbearia...</Text>
+      </Flex>
 
       {Parser('<div class="__shadow"></div>')}
 
 
-      <Button className="fab_carrinho" onClick={() => handleOpenCartSidebar(this)}>
+      <Button onLoad={() => loadData()} className="fab_carrinho" onClick={() => handleOpenCartSidebar(this)}>
         <Image src="/images/caixa_2.png" className="pictureLogo pictureLogoHome fab_carrinho_logo" alt="Barberus" />
       </Button>
 
@@ -730,12 +1247,12 @@ export default function Home({ _email, _session }) {
         <Image id="homeImageLogo"
           borderRadius="50%"
           height="40px"
-          src={_session.photo}
-          alt={_session.email}
+          //src={_session.photo}
+          // alt={_session.email}
           onClick={() => handlePhotoClick(this)}
         />
       </Flex>
-      <Flex height="100%" width="300px" className="home_sidebar_right">
+      <Flex height="100%" className="home_sidebar_right">
         <Flex className="home_sidebar_right_header"
           height="170px" width="100%"
           justifyContent="center"
@@ -743,16 +1260,46 @@ export default function Home({ _email, _session }) {
           <Text textAlign="center" className="home_sidebar_right_header_thumb"  >
 
           </Text>
-          <FontAwesomeIcon
-            onClick={() => handleCloseSidebarRight(this)} className="back_button back_button_header" icon={faTimes} />
 
-          <Image id="homeHeaderImageLogo"
+          <Image className="back_button back_button_header"
             borderRadius="50%"
             height="40px"
-            src={_session.photo}
-            alt={_session.email}
+            src="./images/close.webp"
+            alt="fechar"
             onClick={() => handleCloseSidebarRight(this)}
           />
+          <Flex className="container_user_edit_photo">
+            <Image className="icon_pen"
+              borderRadius="50%"
+              height="40px"
+              src="./images/add.webp"
+              alt="fechar"
+              onClick={() => handleOpenChangePhoto()}
+            /><Image id="homeHeaderImageLogo"
+              borderRadius="50%"
+              height="40px"
+              //src={_session.photo}
+              //  alt={_session.email}
+              onClick={() => handleOpenChangePhoto()}
+            />
+
+          </Flex>
+
+
+          <List className="select_icon_for_user" spacing={3}>
+            {
+              avatar.map((e, i) =>
+                <ListItem onClick={() => handleChangeIcon(e)}>
+                  <Image onClick={() => handleChangeIcon(e)} className="icon_pen"
+                    borderRadius="50%"
+                    height="40px"
+                    src={"./images/avatar/" + e}
+                    alt="photo"
+                  />
+                </ListItem>)
+            }
+          </List>
+
 
         </Flex>
         <Flex className="home_sidebar_right_header_body"
@@ -764,16 +1311,16 @@ export default function Home({ _email, _session }) {
             width="100%" >
             <Flex className="container_name">
               <Text textAlign="center" className="homeSidebarRightHeaderTextName" fontSize="14px" onClick={() => handlePhotoClick(this)} >
-                {_session.userName}
+
               </Text>
               <Text textAlign="center" className="homeSidebarRightHeaderTextTypeName" fontSize="12px" onClick={() => handlePhotoClick(this)} >
-                {_session.typeName}
+
               </Text></Flex>
           </Flex>
 
           <Flex className="container_body">
             <Text textAlign="center" className="homeSidebarRightHeaderTextEmail" fontSize="14px" onClick={() => handlePhotoClick(this)} >
-              {_email}
+
             </Text>
           </Flex>
         </Flex>
@@ -796,7 +1343,7 @@ export default function Home({ _email, _session }) {
               alt="Início"
             /> <Text> Início</Text>
           </Button>
-          <Button id="menu_agendamento" onClick={(e) => handleOpenAgendamento()} className="sidebar_left_menu_item" variant="solid">
+          <Button id="menu_agendamento" onClick={(e) => handlerClickMenuSidebarLeft('menu_agendamentos')} className="sidebar_left_menu_item" variant="solid">
             <Image className="pic"
               height="40px"
               src="./images/menu_agendamentos.webp"
@@ -824,13 +1371,13 @@ export default function Home({ _email, _session }) {
               alt="Início"
             />  <Text>Clientes</Text>
           </Button>
-          <Button id="menu_unidades" onClick={(e) => handlerClickMenuSidebarLeft("menu_unidades")} className="sidebar_left_menu_item" variant="solid">
+          { /*<Button id="menu_unidades" onClick={(e) => handlerClickMenuSidebarLeft("menu_unidades")} className="sidebar_left_menu_item" variant="solid">
             <Image className="pic"
               height="40px"
               src="./images/menu_unidades.webp"
               alt="Início"
             />   <Text>Unidades</Text>
-          </Button>
+  </Button> */}
           <Button id="menu_barbeiros" onClick={(e) => handlerClickMenuSidebarLeft("menu_barbeiros")} className="sidebar_left_menu_item" variant="solid">
             <Image className="pic"
               height="40px"
@@ -967,162 +1514,7 @@ export default function Home({ _email, _session }) {
           </Flex>
         </Flex>
 
-
-        <Flex className="" id="agendamento_sidebar" width="100%">
-
-          <Flex className="box_default_top" width="100%">
-            <Image onClick={() => handleCloseAgendamento(this)} src="/images/close.webp" className="box_default_top_close" alt="Barberus" />
-            <Text className="box_default_top_title">
-              <Image src="/images/caixa_2.png" className=" box_default_top_logo" alt="Barberus" />  Agendamento
-            </Text>
-            <Button onClick={() => handleAddNewClient(this)} className="agendamento_sidebar_buttonadd">
-              + novo
-            </Button>
-          </Flex>
-
-          <Flex className="agendamento_sidebar_options">
-
-            <Image src="/images/minimize.webp" onClick={(e) => handleBarbeiroFilterClose()} className="agendamento_combo_close" alt="Barberus" />
-            <Text className="agendamento_sidebar_options_title">Selecione um barbeiro para refinar a lista</Text>
-            <Flex className="agendamento_combo_barbeiros_filter">
-              <Image src="/images/search.webp" className="agendamento_combo_barbeiros_input_filter_icon" alt="Barberus" />
-
-              <Input
-                placeholder="filtrar..."
-                onKeyDown={(e) => handlerFilterBarbeiros(e)}
-                onKeyPress={(e) => handlerFilterBarbeiros(e)}
-                onKeyUp={(e) => handlerFilterBarbeiros(e)}
-                className="agendamento_combo_barbeiros_input_filter" />
-              <Input
-                placeholder="filtrar..."
-                onKeyDown={(e) => handlerFilterBarbeirosClientes(e)}
-                onKeyPress={(e) => handlerFilterBarbeirosClientes(e)}
-                onKeyUp={(e) => handlerFilterBarbeirosClientes(e)}
-                className="agendamento_combo_barbeiros_input_filter_clientes" />
-              <Input
-                placeholder="filtrar..."
-                onKeyDown={(e) => handlerFilterBarbeirosUnidades(e)}
-                onKeyPress={(e) => handlerFilterBarbeirosUnidades(e)}
-                onKeyUp={(e) => handlerFilterBarbeirosUnidades(e)}
-                className="agendamento_combo_barbeiros_input_filter_unidades" />
-
-
-
-              <Image src="/images/close.webp" onClick={(e) => handleBarbeiroFilterClear()} className="agendamento_combo_barbeiros_input_filter_clear_icon" alt="Barberus" />
-            </Flex>
-
-            <List className="agendamento_combo_barbeiros barbeiros" spacing={3}>
-              {
-                barbeirosArray.map((e, i) =>
-                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'barbeiros')}
-                    className="agendamento_combo_item barbeiros" id={"agendamento_combo_item" + e.id} key={i}>
-                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
-                  </ListItem>)
-              }
-            </List>
-
-
-            <List className="agendamento_combo_barbeiros unidades" spacing={3}>
-              {
-                unidadesArray.map((e, i) =>
-                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'unidades')}
-                    className="agendamento_combo_item unidades" id={"agendamento_combo_item_u" + e.id} key={i}>
-                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
-                  </ListItem>)
-              }
-            </List>
-
-            <List className="agendamento_combo_barbeiros clientes" spacing={3}>
-              {
-                clientsMockServices.map((e, i) =>
-                  <ListItem onClick={() => handleBarbeiroUlClickItem(e, 'clientes')}
-                    className="agendamento_combo_item clientes" id={"agendamento_combo_item_c" + e.id} key={i}>
-                    <Avatar className="avatar_default" name={e.name} /> <Text>{e.name}</Text>
-                  </ListItem>)
-              }
-            </List>
-
-          </Flex>
-
-          <Flex className="agendamento_sidebar_body">
-
-            <Flex className="agendamento_tags">
-              <Button onClick={() => handleAgendamentoTagSelect('barbeiro')} className="tag_barbeiro agendamento_sidebar_buttontag">
-                <Image src="/images/down.webp" alt="Barberus" />  Barbeiro
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('unidade')} className="tag_unidade agendamento_sidebar_buttontag">
-                <Image src="/images/down.webp" alt="Barberus" />  Unidade
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('cliente')} className="tag_cliente agendamento_sidebar_buttontag">
-                <Image src="/images/down.webp" alt="Barberus" />  Cliente
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('hoje')} className="tag_hoje agendamento_sidebar_buttontag">
-                Hoje
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('7_dias')} className="tag_7_dias agendamento_sidebar_buttontag">
-                7 dias
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('15_dias')} className="tag_15_dias agendamento_sidebar_buttontag">
-                15 dias
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('28_dias')} className="tag_28_dias agendamento_sidebar_buttontag">
-                28 dias
-            </Button>
-              <Button onClick={() => handleAgendamentoTagSelect('mes')} className="tag_mes agendamento_sidebar_buttontag">
-                Esse mês
-            </Button>
-            </Flex>
-            <List className="agendamento_ul" spacing={3}>
-              <ListItem className="coluna">
-                <Flex className="agendamento_row_collum">
-                  <Text className="data">Data</Text>
-                  <Text className="hora">Hora</Text>
-                  <Text className="barbeiro">Barbeiro</Text>
-                  <Text className="barbearia">Unidade</Text>
-                  <Text className="cliente">Cliente</Text>
-                  <Text className="desc">Serviço</Text>
-                  <Text className="valor">Valor</Text>
-                  <Text className="status">Status</Text>
-                  <Text className="tempo">Tempo</Text>
-                </Flex>
-              </ListItem>
-              {
-                agendamento_list.map((e, i) =>
-                  <ListItem onClick={() => handleClientesUlClickItem(e)}
-                    className="agendamento_ul_item" id={"agendamento_item" + e.id} key={i}>
-
-                    <Flex className="agendamento_row_collum">
-                      <Text className="item data">{parseDate(e.date)} </Text>
-                      <Text className="item hora">{parseHour(e.hour)} </Text>
-                      <Text className="item barbeiro">{e.barbeiro} </Text>
-                      <Text className="item barbearia">{e.unidade} </Text>
-                      <Text className="item cliente">{e.clientName} </Text>
-                      <Text className="item servico">{e.name} .</Text>
-                      <Text className="item valor">{parseMoney(e.price)}</Text>
-                      <Text data-name={e.status} className="item status">{e.status} </Text>
-                      <Text className="item tempo">{e.time} </Text>
-                    </Flex>
-
-                  </ListItem>)
-              }
-              <ListItem className="coluna footer">
-                <Flex className="agendamento_row_collum">
-                  <Text className="data"></Text>
-                  <Text className="hora"></Text>
-                  <Text className="barbeiro"></Text>
-                  <Text className="barbearia"></Text>
-                  <Text className="cliente"></Text>
-                  <Text className="desc">Total: </Text>
-                  <Text className="valor">R$ 3.452,90</Text>
-                  <Text className="status"></Text>
-                  <Text className="tempo"></Text>
-                </Flex>
-              </ListItem>
-            </List>
-          </Flex>
-        </Flex>
-
-        <Flex className="" id="clientes_sidebar" width="100%">
+        <Text className="" id="clientes_sidebar" width="100%">
 
           <Flex className="" id="clientes_sidebar_shadow" width="100%">
             <Flex className="add_clientes_sidebar" width="100%">
@@ -1160,7 +1552,7 @@ export default function Home({ _email, _session }) {
                 <Button onClick={() => handleCloseAddCliente(this)} className="cancelar">
                   cancelar
             </Button>
-                <Button onClick={() => handleCloseAddCliente(this)} className="salvar">
+                <Button onClick={() => handleSaveAddCliente()} className="salvar">
                   salvar
             </Button>
               </Flex>
@@ -1188,6 +1580,7 @@ export default function Home({ _email, _session }) {
               <Image src="/images/close.webp" onClick={(e) => handleClientesFilterClear()} className="clientes_input_filter_clear_icon" alt="Barberus" />
             </Flex>
 
+
             <List className="clientes_ul" spacing={3}>
               {/*   { id: 1, name: 'Beto Paiva', whatsapp: '15997572550', isBirthdate: false, photo: './images/default.png', comments: 'Cliente com debitos em aberto' }, */
                 clientsMockServices.map((e, i) =>
@@ -1197,6 +1590,7 @@ export default function Home({ _email, _session }) {
                   </ListItem>)
               }
             </List>
+
             <Flex className="clientes_detalhes">
               <Flex className="no_client_main">
                 <Image className="no_client_select_img" src="/images/profile.png" alt="Barberus" />
@@ -1208,19 +1602,7 @@ export default function Home({ _email, _session }) {
                 <Flex className="instabarber">
                   <Text className="title">InstaBarber</Text>
                   <List className="clientes_instabarber_ul" spacing={3}>
-                    <OverflowWrapper>
-                      {
-                        clienteDetalhes[0].instabarber.map((e, i) =>
-                          <ListItem className="clientes_instabarber_li" id={"clientes_instabarber_item" + e.id} key={i}>
-                            <Avatar className="avatar_default " src={e.photo} />
-                            <Flex className="social">
-                              <Text className="item1 item">   <Image className="likes" src="/images/like.webp" alt="Barberus" /> {e.likes} </Text>
-                              <Text className="item2 item">  <Image className="shares" src="/images/share.webp" alt="Barberus" />  {e.shares} </Text>
-                              <Text className="item3 item">  <Image className="comments" src="/images/comment.webp" alt="Barberus" />  {e.comments} </Text>
-                            </Flex></ListItem>
-                        )
-                      }
-                    </OverflowWrapper>
+
                   </List>
                 </Flex>
 
@@ -1238,29 +1620,8 @@ export default function Home({ _email, _session }) {
                   </Flex>
 
                   <List className="clientes_agendamento_ul" spacing={3}>
-                    <ListItem className="clientes_agendamento_li clientes_agendamento_head"  >
 
-                      <Flex className="row">
-                        <Text className="item1 item head">     Data </Text>
-                        <Text className="item2 item head">   Descrição </Text>
-                        <Text className="item3 item head">    Valor </Text>
-                        <Text className="item4 item head">    Status </Text>
-                        <Text className="item5 item head">     Tempo </Text>
-                      </Flex></ListItem>
 
-                    {/*       { id: 1, date: 20201201, hour: 10.30, name: 'Corte+Barba', price: 25.90, status: 'finalizado' }, */
-                      clienteDetalhes[0].agendamentos.map((e, i) =>
-                        <ListItem className="clientes_agendamento_li" data-name="row" id={"clientes_agendamento_item" + e.id} key={i}>
-
-                          <Flex className="row">
-                            <Text className="item1 item">    {parseDate(e.date) + " " + parseHour(e.hour)} </Text>
-                            <Text className="item2 item">    {e.name} </Text>
-                            <Text className="item3 item">    {parseMoney(e.price)} </Text>
-                            <Text className="item4 item" data-name={e.status}>     {e.status} </Text>
-                            <Text className="item5 item">     {e.time + " min"} </Text>
-                          </Flex></ListItem>
-                      )
-                    }
                   </List>
                   <Flex className="agendamento_buttons_footer">
                     <Button className="cliente_agendamento cliente_button">
@@ -1279,9 +1640,28 @@ export default function Home({ _email, _session }) {
 
             </Flex>
           </Flex>
+        </Text>
+
+        <Flex className="pop_unidades shadow_components component_container" display="none">
+          <ListUnidades></ListUnidades>
         </Flex>
 
+        <Flex className="pop_barbeiros shadow_components component_container" display="none">
+          <ListBarbeiros></ListBarbeiros>
+        </Flex>
 
+        <Flex className="pop_financeiro shadow_components component_container" display="none">
+          <Financeiro></Financeiro>
+        </Flex>
+        <Flex className="pop_estoques shadow_components component_container" display="none">
+          <Estoques></Estoques>
+        </Flex>
+
+        <Flex className="pop_agendamentos shadow_components component_container" display="none">
+          <Agendamentos></Agendamentos>
+        </Flex>
+
+        <PopUpSQL></PopUpSQL>
 
         <Flex className="box_default" id="cart_sidebar" width="100%">
           <Flex className="box_default_top" width="100%">
@@ -1396,42 +1776,28 @@ export default function Home({ _email, _session }) {
 }
 
 
-Home.getInitialProps = async (ctx) => {
-  var email = 'xbrunots@gmail.com'
-  var token = 'no-token'
-  var sessionData = {
-    _id: "5fe7814e0378071e7aaf6e07",
-    email: "xbrunots@gmail.com",
-    password: null,
-    status: 1,
-    type: 99,
-    createAt: "2020 - 12 - 26T18: 30: 38.847Z",
-    token: "NO - TOKEN",
-    photo: "./images/default.png",
-    typeName: 'owner',
-    userName: 'Fulano Dital'
-  }
-
-  var type = 'owner'
-  if (sessionData.type == 99) {
-    type = 'owner';
-
-  } else if (sessionData.type == 0) {
-    type = 'manager';
-
-  } else if (sessionData.type == 1) {
-    type = 'barber';
-
-  } else if (sessionData.type == 2) {
-    type = 'franchise';
-
-  } else if (sessionData.type == 3) {
-    type = 'secretary';
-  } else {
-    type = 'Barber';
-  }
-
-  sessionData.typeName = type
-
-  return { _email: email, _session: sessionData }
+Home.getInitialProps = async ({ req }) => {
+  /*  
+    let token;
+    if (req) {
+      // server
+      return { _session: {} };
+    } else {
+      // client
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.API_HOST}/profile`, {
+        headers: { token: token },
+      });
+  
+      const _session = await res.json();
+      
+      console.log("YEP")
+      console.log(JSON.stringify(_session))
+      console.log("YEP") 
+   
+      return { _session };
+  
+    }
+   */
+  return {}
 }

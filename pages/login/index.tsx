@@ -19,10 +19,15 @@ export default function Home() {
     //axios.post('/api/subscribe', { email });
   }
 
+  function goToContinue() {
+    $('.button_login').text("")
+    $('.loader').attr('style', 'display:block !important;')
+    router.push('/continue?email=' + email)
+  }
+
   return (
     <Flex
       as="main"
-      height="100vh"
       justifyContent="center"
       alignItems="center"
     >
@@ -37,9 +42,12 @@ export default function Home() {
         marginTop={4}
         width="100%"
         maxW="400px"
-        position="relative"
+        position="absolute"
         paddingTop="160px"
+        top="200px"
       >
+
+
         <Image marginBottom={8} src="/images/logo.png" className="pictureLogo" alt="Barberus" />
         <Text marginBottom={8} className="pictureBgLogo" />
 
@@ -69,7 +77,7 @@ export default function Home() {
           borderRadius="sm"
           marginTop={6}
           _hover={{ backgroundColor: 'purple.600' }}
-          onClick={() => router.push('/continue?email=' + email)}
+          onClick={() => goToContinue()}
         >
           PROXIMA
         </Button>

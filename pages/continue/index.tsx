@@ -8,11 +8,12 @@ import $ from 'jquery';
 import Input from '../../components/Input'
 import axios from 'axios';
 var LocalStore = require('localstorejs');
-
+var config = require('../config.json');
 
 
 export default function Home() {
 
+  const API = config.api
   const router = useRouter()
   const toast = useToast()
   const [password, setPassword] = useState('');
@@ -37,31 +38,19 @@ export default function Home() {
       $('.button_login').text("")
       $('.loader').attr('style', 'display:block !important;')
 
-      axios.post('/api/login', { email: email, password: password })
+      axios.post(API + '/login', { email: email, password: password },
+        { headers: { 'Content-Type': 'application/json' } })
         .then(function (response) {
-          if (response.data.success) {
-            toast({
-              title: "Uuhul!",
-              description: "Bem vindo, " + email,
-              status: "success",
-              duration: 8000,
-              isClosable: true,
-            })
+          toast({
+            title: "Uuhul!",
+            description: "Bem vindo, " + email,
+            status: "success",
+            duration: 8000,
+            isClosable: true,
+          })
 
-            LocalStore.set('token', response.data.data[0].token);
-            LocalStore.set('email', response.data.data[0].email);
-            LocalStore.set('session_user', JSON.stringify(response.data.data[0]));
-
-            router.push('/app')
-          } else {
-            toast({
-              title: "Oops!",
-              description: response.data.message,
-              status: "error",
-              duration: 8000,
-              isClosable: true,
-            })
-          }
+          localStorage.setItem('token', response.data.token)
+          router.push('/app')
           $('.button_login').text("CRIAR")
           $('.loader').attr('style', 'display:none !important;')
         })
@@ -84,7 +73,6 @@ export default function Home() {
   return (
     <Flex
       as="main"
-      height="100vh"
       justifyContent="center"
       alignItems="center"
     >
@@ -99,8 +87,9 @@ export default function Home() {
         marginTop={4}
         width="100%"
         maxW="400px"
-        position="relative"
+        position="absolute"
         paddingTop="160px"
+        top="200px"
       >
 
         <Image marginBottom={8} src="/images/logo.png" className="pictureLogo" alt="Barberus" />

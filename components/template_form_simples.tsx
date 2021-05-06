@@ -12,8 +12,6 @@ var LocalStore = require('localstorejs');
 import { useHistory } from "react-router-dom";
 import Parser from 'html-react-parser';
 import Input from './Input'
-import { configs } from '../pages/config.json';
-
 
 const prefix = "prefix_unidades"
 

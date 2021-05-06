@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/router'
 import $ from 'jquery';
+var config = require('../config.json');
 
 
 //import Input from '../../../components/Input'
@@ -17,6 +18,8 @@ export default function Home() {
   const [c_password, setc_Password] = useState('');
   const [validEmail, setValidEmail] = useState('');
   const [validPassword, setValidPassword] = useState('');
+
+  const API = config.api
 
   function validateEmail(email) {
     const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -58,30 +61,20 @@ export default function Home() {
       $('#form_enter').text("")
       $('.loader').attr('style', 'display:block !important;')
 
-      axios.post('/api/register', { email: email, password: password })
+      axios.post(API + '/register', { email: email, password: password, confirm_password: c_password })
         .then(function (response) {
-          if (response.data.success) {
-            toast({
-              title: "Uuhul!",
-              description: "Usuário cadastrado com sucesso!",
-              status: "success",
-              duration: 8000,
-              isClosable: true,
-            })
+          toast({
+            title: "Uuhul!",
+            description: "Usuário cadastrado com sucesso!",
+            status: "success",
+            duration: 8000,
+            isClosable: true,
+          })
 
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('email', email);
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('email', email);
 
-            router.push('/app')
-          } else {
-            toast({
-              title: "Oops!",
-              description: response.data.message,
-              status: "error",
-              duration: 8000,
-              isClosable: true,
-            })
-          }
+          router.push('/login')
           $('#form_enter').text("CRIAR")
           $('.loader').attr('style', 'display:none !important;')
         })
@@ -104,7 +97,6 @@ export default function Home() {
   return (
     <Flex
       as="main"
-      height="100vh"
       justifyContent="center"
       alignItems="center"
     >
@@ -119,8 +111,9 @@ export default function Home() {
         marginTop={4}
         width="100%"
         maxW="400px"
-        position="relative"
+        position="absolute"
         paddingTop="160px"
+        top="200px"
       >
 
         <Image marginBottom={8} src="/images/logo.png" className="pictureLogo" alt="Barberus" />
@@ -154,7 +147,7 @@ export default function Home() {
         />
 
         <Input name="confirm_password" className="input_login"
-          placeholder="Senha"
+          placeholder="Confirmação de senha"
           backgroundColor="#FFFFFF"
           type="password"
           color="purple.600"
